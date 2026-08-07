@@ -1,10 +1,17 @@
 from os import getenv
 from dotenv import load_dotenv
+import os
 
 load_dotenv()
 
 class Config:
     def __init__(self):
+        # Automatically generate cookies.txt from the COOKIES environment variable
+        cookie_data = getenv("COOKIES")
+        if cookie_data:
+            with open("cookies.txt", "w") as f:
+                f.write(cookie_data)
+
         self.API_ID = int(getenv("API_ID", 0))
         self.API_HASH = getenv("API_HASH")
 
