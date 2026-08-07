@@ -1,3 +1,4 @@
-python3 -m pip install -U yt-dlp
+cp mycookies.txt cookies.txt
+uv run pip install -U yt-dlp
 python3 server.py &
 uv run python3 -m anony
