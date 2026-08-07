@@ -1,5 +1,9 @@
 if [ -n "$COOKIES" ]; then
     echo "$COOKIES" > cookies.txt
+    echo "COOKIES LOADED SUCCESSFULLY FROM ENV!"
+    head -n 2 cookies.txt
+else
+    echo "WARNING: COOKIES ENVIRONMENT VARIABLE IS EMPTY!"
 fi
 
 uv run pip install -U yt-dlp
