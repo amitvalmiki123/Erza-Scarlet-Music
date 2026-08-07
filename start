@@ -1,4 +1,5 @@
 cp mycookies.txt cookies.txt
+ls -la
 uv run pip install -U yt-dlp
 python3 server.py &
 uv run python3 -m anony
