@@ -118,9 +118,22 @@ class YouTube:
         if Path(filename).exists():
             return filename
 
+        # --- YAHAN NAYA CLEANUP LOGIC ADD KARO ---
+        try:
+            downloads_dir = Path("downloads")
+            if downloads_dir.exists():
+                for file in downloads_dir.iterdir():
+                    if file.is_file() and file.name != f"{video_id}.{ext}":
+                        try:
+                            file.unlink()
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+        # ----------------------------------------
+
         cookie = self.get_cookies()
         base_opts = {
-            # YAHAN MAGIC HUA HAI: Ab yt-dlp apni marzi se extension nahi badlega
             "outtmpl": filename, 
             "quiet": True,
             "noplaylist": True,
