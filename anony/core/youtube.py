@@ -155,8 +155,12 @@ class YouTube:
         else:
             ydl_opts = {
                 **base_opts,
-                # Yahan strictly bol diya ki sirf pure audio aana chahiye, video bilkul nahi
-                "format": "140/bestaudio[vcodec=none]",
+                # Yeh chain kabhi fail nahi hogi: 
+                # 1st: Format 140 try karega
+                # 2nd: Agar na ho toh koi bhi best audio m4a try karega
+                # 3rd: Agar wo bhi na ho toh standard best audio try karega
+                # 4th: Agar kuch bhi na mile toh aakhiri mein koi bhi default best format utha lega (Error kabhi nahi aayega)
+                "format": "140/bestaudio[ext=m4a]/bestaudio/best",
             }
 
         def _download():
