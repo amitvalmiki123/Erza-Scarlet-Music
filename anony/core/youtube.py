@@ -133,13 +133,13 @@ class YouTube:
         if video:
             ydl_opts = {
                 **base_opts,
-                "format": "(bestvideo[height<=?720][width<=?1280][ext=mp4])+(bestaudio)",
+                "format": "bestvideo[height<=?720]+bestaudio/best",
                 "merge_output_format": "mp4",
             }
         else:
             ydl_opts = {
                 **base_opts,
-                "format": "bestaudio[ext=webm][acodec=opus]",
+                "format": "bestaudio/best",
             }
 
         def _download():
