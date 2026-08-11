@@ -35,6 +35,13 @@ async def play_hndlr(
     video: bool = False,
     url: str = None,
 ) -> None:
+    # YAHAN SE ADD HUA HAI: Command message auto-delete logic
+    try:
+        await m.delete()
+    except Exception:
+        pass
+    # YAHAN TAK
+
     sent = await m.reply_text(m.lang["play_searching"])
     file = None
     mention = m.from_user.mention
@@ -116,7 +123,8 @@ async def play_hndlr(
             return
 
     if not file.file_path:
-        fname = f"downloads/{file.id}.{'mp4' if video else 'webm'}"
+        # YAHAN `.webm` KO `.m4a` KAR DIYA HAI TAAKI EXTENSION MATCH RAHE
+        fname = f"downloads/{file.id}.{'mp4' if video else 'm4a'}"
         if Path(fname).exists():
             file.file_path = fname
         else:
