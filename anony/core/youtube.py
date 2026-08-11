@@ -155,8 +155,8 @@ class YouTube:
         else:
             ydl_opts = {
                 **base_opts,
-                # YAHAN CHANGE KIYA HAI: Sirf chote aur fast formats ko priority di hai
-                "format": "140/bestaudio[ext=m4a]/bestaudio[filesize<20M]/worstaudio", 
+                # Yahan strictly bol diya ki sirf pure audio aana chahiye, video bilkul nahi
+                "format": "140/bestaudio[vcodec=none]",
             }
 
         def _download():
