@@ -139,9 +139,10 @@ class YouTube:
                 "merge_output_format": "mp4",
             }
         else:
+            # YAHAN CHANGE KIYA HAI: Fallback options add kar diye
             ydl_opts = {
                 **base_opts,
-                "format": "140", 
+                "format": "140/bestaudio[ext=m4a]/bestaudio/best", 
             }
 
         def _download():
