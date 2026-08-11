@@ -128,6 +128,7 @@ class YouTube:
             "overwrites": False,
             "nocheckcertificate": True,
             "cookiefile": cookie,
+            "extractor_args": {"youtube": ["client=ANDROID_MUSIC"]}, # <--- YEH MAGIC LINE ADD KARNI HAI
         }
 
         if video:
