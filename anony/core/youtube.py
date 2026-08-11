@@ -120,7 +120,8 @@ class YouTube:
 
         cookie = self.get_cookies()
         base_opts = {
-            "outtmpl": "downloads/%(id)s.%(ext)s",
+            # YAHAN MAGIC HUA HAI: Ab yt-dlp apni marzi se extension nahi badlega
+            "outtmpl": filename, 
             "quiet": True,
             "noplaylist": True,
             "geo_bypass": True,
@@ -139,7 +140,6 @@ class YouTube:
                 "merge_output_format": "mp4",
             }
         else:
-            # YAHAN CHANGE KIYA HAI: Fallback options add kar diye
             ydl_opts = {
                 **base_opts,
                 "format": "140/bestaudio[ext=m4a]/bestaudio/best", 
