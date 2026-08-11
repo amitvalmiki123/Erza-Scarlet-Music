@@ -128,7 +128,8 @@ class YouTube:
             "overwrites": False,
             "nocheckcertificate": True,
             "cookiefile": cookie,
-            "extractor_args": {"youtube": ["client=ANDROID_MUSIC"]}, # <--- YEH MAGIC LINE ADD KARNI HAI
+            "cachedir": False, 
+            "extractor_args": {"youtube": ["client=ANDROID_MUSIC"]}, 
         }
 
         if video:
@@ -140,7 +141,7 @@ class YouTube:
         else:
             ydl_opts = {
                 **base_opts,
-                "format": "bestaudio[ext=m4a]/bestaudio/best",
+                "format": "140", 
             }
 
         def _download():
