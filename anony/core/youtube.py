@@ -112,7 +112,7 @@ class YouTube:
 
     async def download(self, video_id: str, video: bool = False) -> str | None:
         url = self.base + video_id
-        ext = "mp4" if video else "webm"
+        ext = "mp4" if video else "m4a"
         filename = f"downloads/{video_id}.{ext}"
 
         if Path(filename).exists():
@@ -139,7 +139,7 @@ class YouTube:
         else:
             ydl_opts = {
                 **base_opts,
-                "format": "bestaudio/best",
+                "format": "bestaudio[ext=m4a]/bestaudio/best",
             }
 
         def _download():
