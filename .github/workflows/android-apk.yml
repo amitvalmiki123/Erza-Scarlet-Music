@@ -63,6 +63,23 @@ jobs:
           echo "--- outputs ---"
           find app/build/outputs/apk -name '*.apk' -print
 
+      - name: Verify APK contents (assets + manifest)
+        run: |
+          set -e
+          APK=chess-sikho/android/app/build/outputs/apk/release/app-release.apk
+          echo "== APK size =="
+          ls -lh "$APK"
+          echo "== assets inside APK =="
+          unzip -l "$APK" | grep 'assets/' || { echo 'FATAL: web assets APK me nahi gayi'; exit 1; }
+          echo "== required files check =="
+          for f in index.html app.js engine.js ai.js analyzer.js coach.js openings.js voice.js storage.js board.js lessons.js styles.css; do
+            unzip -l "$APK" | grep -q "assets/$f" || { echo "FATAL: assets/$f missing"; exit 1; }
+            echo "  ok assets/$f"
+          done
+          echo "== signing =="
+          BUILD_TOOLS=$(ls -d ${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools/* | sort -V | tail -1)
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$APK" | head -5
+
       - name: Collect and rename APKs
         run: |
           mkdir -p dist
