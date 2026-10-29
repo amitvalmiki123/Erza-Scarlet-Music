@@ -7,6 +7,7 @@ on:
     paths:
       - 'chess-sikho/**'
       - '.github/workflows/android-apk.yml'
+      - '.github/workflows/apk-release-notes.md'
 
 permissions:
   contents: write
@@ -32,8 +33,8 @@ jobs:
 
       - name: Install SDK packages
         run: |
-          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools" >/dev/null
-          yes | sdkmanager --licenses >/dev/null 2>&1 || true
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 
       - name: Cache Gradle
         uses: actions/cache@v4
@@ -57,9 +58,9 @@ jobs:
           mkdir -p dist
           cp chess-sikho/android/app/build/outputs/apk/release/app-release.apk dist/ChessSikho.apk
           cp chess-sikho/android/app/build/outputs/apk/debug/app-debug.apk dist/ChessSikho-debug.apk
+          sed "s/{SHA}/${GITHUB_SHA}/" .github/workflows/apk-release-notes.md > dist/RELEASE_NOTES.md
+          (cd dist && sha256sum ChessSikho.apk ChessSikho-debug.apk > SHA256SUMS.txt)
           ls -lh dist
-          # version info for the release notes
-          (cd chess-sikho/android && sha256sum ../../dist/ChessSikho.apk > ../../dist/SHA256SUMS.txt)
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -71,34 +72,15 @@ jobs:
             dist/SHA256SUMS.txt
           if-no-files-found: error
 
-      - name: Publish GitHub release (latest APK)
-        if: github.ref == 'refs/heads/arena/e5d474ac-erza-scarlet-music' || github.ref == 'refs/heads/main'
+      - name: Publish GitHub release with APK
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="apk-v1.0"
-          NOTES="Chess Sikho — offline Hinglish chess coach APK.
-
-**Install kaise karein**
-1. Neeche se \`ChessSikho.apk\` download karo (phone me).
-2. Download kholo — Android bolega \"Unknown sources allow karo\" → Settings me allow kar do.
-3. Install → app kholo. Internet ki zaroorat nahi hai.
-
-**Kya milta hai**
-- 🧠 Coach: har position pe best move + **kyu** (Hinglish), jeetne ki probability
-- 🔊 Voice guide: guide bol ke sunata hai (native Android TTS)
-- 🎯 Opponent ki expected chaalein probability ke saath + unka jawab
-- ⚠️ Threat alert: kaunsa piece free me ja raha hai
-- 📖 Opening book: Italian, London, Caro-Kann, Sicilian… plan aur trap ke saath
-- 📚 15 Hinglish lessons + 8 mate-in-1 puzzles
-- ♟️ 4 level ka bot, undo, hint, flip
-
-Build: ${{ github.sha }}
-"
-          if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/ChessSikho.apk dist/ChessSikho-debug.apk dist/SHA256SUMS.txt --clobber
-            gh release edit "$TAG" --notes "$NOTES"
+          TAG="chess-sikho-apk"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            gh release upload "$TAG" dist/ChessSikho.apk dist/ChessSikho-debug.apk dist/SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY"
+            gh release edit "$TAG" --notes-file dist/RELEASE_NOTES.md --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$TAG" dist/ChessSikho.apk dist/ChessSikho-debug.apk dist/SHA256SUMS.txt \
-              --title "Chess Sikho APK v1.0" --notes "$NOTES"
+            gh release create "$TAG" dist/ChessSikho.apk dist/ChessSikho-debug.apk dist/SHA256SUMS.txt --title "Chess Sikho APK (offline Hinglish chess coach)" --notes-file dist/RELEASE_NOTES.md --repo "$GITHUB_REPOSITORY"
           fi
+          echo "Download: https://github.com/$GITHUB_REPOSITORY/releases/tag/$TAG"
