@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Chess Sikho — 15 minute ka Hinglish crash course</title>
+<meta name="description" content="Chess jaldi seekho: Hinglish lessons, interactive board, puzzles aur beginner bot. Sirf 15 minute me basics se pehli jeet tak." />
+<meta name="theme-color" content="#0b0c11" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23151823'/%3E%3Ctext x='50' y='72' font-size='62' text-anchor='middle' fill='%23ff4d5e'%3E%E2%99%9E%3C/text%3E%3C/svg%3E" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <span class="knight">♞</span>
+        <span>Chess Sikho
+          <small>Hinglish · 15 minute · zero experience</small>
+        </span>
+      </div>
+      <nav class="tabs" aria-label="Main navigation">
+        <button class="tab active" data-tab="home">🏠 Home</button>
+        <button class="tab" data-tab="learn">📚 Seekho</button>
+        <button class="tab" data-tab="play">♟️ Khelo</button>
+        <button class="tab" data-tab="puzzles">🧩 Puzzles</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section id="view-home" class="view"></section>
+    <section id="view-learn" class="view hidden"></section>
+    <section id="view-play" class="view hidden"></section>
+    <section id="view-puzzles" class="view hidden"></section>
+  </main>
+
+  <footer class="foot">
+    <div class="wrap">
+      Bina pressure ke seekho — galtiyan hi chess ka syllabus hain. · <a href="#" id="reset-progress">Progress reset karo</a>
+    </div>
+  </footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
+
+  <script src="engine.js"></script>
+  <script src="ai.js"></script>
+  <script src="board.js"></script>
+  <script src="lessons.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
