@@ -1,0 +1,64 @@
+plugins {
+    id 'com.android.application'
+}
+
+// Web app ke files (index.html + *.css + *.js) build time par assets me copy hote hain.
+// Single source of truth = chess-sikho/ folder, isliye duplicate files commit nahi karni padti.
+def webDir = file("$projectDir/../..")
+def webAssetsDir = new File(layout.buildDirectory.get().asFile, 'webassets')
+
+tasks.register('copyWebAssets', Copy) {
+    from(webDir) {
+        include '*.html', '*.css', '*.js'
+    }
+    into webAssetsDir
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+android {
+    namespace 'com.chesssikho.app'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.chesssikho.app"
+        minSdk 21
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
+    }
+
+    sourceSets {
+        main {
+            assets.srcDirs += webAssetsDir
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+        }
+        release {
+            // Debug keystore se sign — APK seedha sideload/install ho jaata hai.
+            signingConfig signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+}
+
+preBuild.dependsOn copyWebAssets
+
+dependencies {
+    // Zero external dependencies — app poora offline chalta hai.
+}

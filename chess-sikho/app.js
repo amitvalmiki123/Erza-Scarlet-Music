@@ -10,16 +10,13 @@
 
   // ---------- progress ----------
   const KEY = 'chessSikho.v1';
-  const DEFAULTS = { lessons: {}, puzzles: {}, games: 0, wins: 0 };
-  let progress;
-  try {
-    progress = Object.assign({}, DEFAULTS, JSON.parse(localStorage.getItem(KEY) || '{}'));
-  } catch (e) {
-    progress = Object.assign({}, DEFAULTS);
-  }
-  function saveProgress() {
-    try { localStorage.setItem(KEY, JSON.stringify(progress)); } catch (e) { /* ignore */ }
-  }
+  const DEFAULTS = { lessons: {}, puzzles: {}, games: 0, wins: 0, settings: {} };
+  const Store = (typeof globalThis !== 'undefined' ? globalThis : window).AppStorage || {
+    getJSON: (k, f) => { try { return JSON.parse(localStorage.getItem(k) || 'null') || f; } catch (e) { return f; } },
+    setJSON: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* ignore */ } },
+  };
+  let progress = Object.assign({}, DEFAULTS, Store.getJSON(KEY, {}));
+  function saveProgress() { Store.setJSON(KEY, progress); }
 
   // ---------- tiny helpers ----------
   const $ = (sel, root) => (root || document).querySelector(sel);
@@ -512,6 +509,8 @@
   let play = null;
 
   function newPlay(level, playerColor) {
+    if (play && play.coachApi) { try { window.CoachUI.unmount(); } catch (e) { /* ignore */ } }
+    if (window.ChessCoachCache) window.ChessCoachCache.clear();
     play = {
       game: new Chess(),
       level: level || (play ? play.level : 2),
@@ -573,6 +572,51 @@
     return score > 0 ? { color: 'w', value: Math.round(score) } : { color: 'b', value: Math.round(-score) };
   }
 
+  // ---------- Coach (guide mode) ----------
+  function mountCoach() {
+    const panel = $('#coach-panel', views.play);
+    if (!panel || !window.CoachUI) return;
+    const ctx = {
+      getGame: () => (play && !play.result ? play.game : null),
+      getSans: () => (play ? play.moves.map((m) => m.san) : []),
+      onArrow: (move, sticky) => {
+        if (!play || !play.board) return;
+        if (!move) { play.board.arrows = []; play.board.hintSquares = []; play.board.render(); return; }
+        play.board.arrows = [[move.from, move.to, '#47d7a0']];
+        play.board.hintSquares = [move.from, move.to];
+        play.board.render();
+        if (!sticky) {
+          setTimeout(() => {
+            if (!play || !play.board) return;
+            play.board.arrows = [];
+            play.board.hintSquares = [];
+            play.board.render();
+          }, 2600);
+        }
+      },
+      onPlayMove: (move) => {
+        if (!play || play.result || play.thinking) return;
+        if (play.game.turn !== play.playerColor) { toast('Abhi tumhari chaal nahi hai'); return; }
+        const m = play.game.findMove(move.from, move.to, move.promotion || 'q');
+        if (!m) { toast('Ye chaal legal nahi hai'); return; }
+        humanMove(move.from, move.to, move.promotion || undefined);
+      },
+      onPreview: (alt) => {
+        if (alt && alt.san) toast(`Option: ${alt.san} · ${Math.round(alt.winProb * 100)}% jeet`);
+      },
+      shouldSpeak: true,
+    };
+    play.coachCtx = ctx;
+    play.coachApi = window.CoachUI.mount(panel, ctx);
+  }
+
+  function coachRefresh(force) {
+    if (!play || !play.coachApi) return;
+    if (play.result || play.thinking) return;
+    if (play.game.turn !== play.playerColor) return;
+    play.coachApi.refresh(!!force);
+  }
+
   function renderPlay() {
     if (!play) newPlay(2, 'w');
     const el = views.play;
@@ -585,6 +629,7 @@
           <div id="bottom-row"></div>
         </div>
         <aside>
+          <div class="panel coach-panel" id="coach-panel" aria-live="polite"></div>
           <div class="panel">
             <div class="field">
               <p class="field-label">Bot ka level</p>
@@ -631,6 +676,8 @@
     play.board.lastMove = play.lastMove;
     play.board.flipped = play.playerColor === 'b';
     play.board.render();
+
+    mountCoach();
 
     $('#level-seg', el).addEventListener('click', (e) => {
       const b = e.target.closest('[data-level]');
@@ -721,6 +768,8 @@
       movesEl.scrollTop = movesEl.scrollHeight;
     }
 
+    coachRefresh(false);
+
     // result card
     const resEl = $('#result', el);
     if (resEl) {
@@ -802,6 +851,15 @@
   function showHint() {
     if (!play || play.thinking || play.result) return;
     if (play.game.turn !== play.playerColor) return;
+    const cached = play.coachCtx && play.coachCtx.data && play.coachCtx.data.best;
+    if (cached && !play.coachCtx.busy) {
+      play.board.arrows = [[cached.move.from, cached.move.to, '#47d7a0']];
+      play.board.hintSquares = [cached.move.from];
+      play.board.render();
+      const reason = cached.why && cached.why.length ? cached.why[0].text.replace(/\*\*/g, '') : '';
+      toast(`💡 ${cached.san} — ${reason}`.slice(0, 140), 4200);
+      return;
+    }
     const res = window.ChessAI.chooseMove(play.game, Math.max(3, play.level), { maxNodes: 120000 });
     if (!res.move) return;
     const san = play.game.san(res.move);

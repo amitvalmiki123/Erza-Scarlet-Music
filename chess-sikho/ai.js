@@ -197,7 +197,40 @@
     return { move: best, score: bestScore, thinkMs: Date.now() - started, nodes: ctx.nodes };
   }
 
-  return { chooseMove, evaluate, LEVELS: {
+  /**
+   * Har legal move ka score (side-to-move perspective, centipawns).
+   * Coach sidebar isi se ranking + probabilities banata hai.
+   */
+  function rankMoves(game, depth = 2, options = {}) {
+    const rootMoves = game.legalMoves();
+    if (!rootMoves.length) return [];
+    const side = game.turn === 'w' ? 1 : -1;
+    const ctx = { nodes: 0, maxNodes: options.maxNodes || 60000, ply: 0 };
+    const out = [];
+    for (const m of rootMoves) {
+      game.makeMove(m);
+      ctx.ply = 1;
+      const score = -search(game, Math.max(0, depth - 1), -Infinity, Infinity, -side, ctx);
+      ctx.ply = 0;
+      game.undoMove();
+      out.push({ move: m, score, san: game.san(m) });
+    }
+    out.sort((a, b) => b.score - a.score);
+    return out;
+  }
+
+  /** Position ka static eval (white perspective, cp). */
+  function staticEval(game) {
+    return evaluate(game);
+  }
+
+  /** Side-to-move ka sabse achha move (koi randomness nahi). */
+  function bestMove(game, depth = 3, options = {}) {
+    const ranked = rankMoves(game, depth, options);
+    return ranked.length ? ranked[0] : null;
+  }
+
+  return { chooseMove, rankMoves, bestMove, staticEval, evaluate, LEVELS: {
     1: { name: 'Naya khiladi', emoji: '🐣', hint: 'Galtiyaan karega — jeetna aasan hai' },
     2: { name: 'Sikhne wala', emoji: '🙂', hint: 'Basic tactics khelta hai' },
     3: { name: 'Theek-thaak', emoji: '😎', hint: '3 chaal aage sochta hai' },
