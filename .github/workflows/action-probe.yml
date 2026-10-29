@@ -1,0 +1,9 @@
+name: probe
+on:
+  push:
+    paths: ['.github/workflows/action-probe.yml']
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "probe ok" && uname -a
