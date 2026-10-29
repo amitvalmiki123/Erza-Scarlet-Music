@@ -30,9 +30,19 @@ function assert(cond, msg) {
   else { console.log('❌ ' + msg); errors.push(msg); }
 }
 
+async function waitFor(fn, ms = 8000) {
+  const t0 = Date.now();
+  while (Date.now() - t0 < ms) {
+    if (fn()) return true;
+    await wait(100);
+  }
+  return false;
+}
+
 (async () => {
-  await wait(700);
   const doc = window.document;
+  const ready = await waitFor(() => doc.querySelector('.hero h1'));
+  if (!ready) { console.log('❌ app boot hi nahi hua (scripts load nahi)'); errors.push('boot failed'); }
 
   assert(doc.querySelectorAll('.chboard').length >= 0, 'page loaded');
 

@@ -300,6 +300,31 @@
       </section>
 
       <div class="section-title">
+        <h2>🧠 Coach — har move pe guide</h2>
+        <span>Kholo → Khelo tab → right sidebar</span>
+      </div>
+      <div class="grid cols-2">
+        <div class="card">
+          <h3>Kya batata hai</h3>
+          <ul style="color:var(--muted);font-size:.88rem;padding-left:20px;margin:10px 0 0;display:grid;gap:6px">
+            <li><b style="color:var(--text)">Sabse achhi chaal</b> + jeetne ki probability</li>
+            <li><b style="color:var(--text)">Kyu</b> — develop, center, castle, fork, pin, hanging piece…</li>
+            <li><b style="color:var(--text)">Opponent ki expected chaalein</b> — probability % ke saath, aur har ek ka jawab</li>
+            <li><b style="color:var(--text)">Capture ka hisaab</b> — trade lena chahiye ya nuksan hai</li>
+            <li><b style="color:var(--text)">Opening book</b> — plan aur trap ke saath</li>
+          </ul>
+          <div style="margin-top:14px"><button class="btn primary small" data-go="play">♟️ Coach ke saath khelo →</button></div>
+        </div>
+        <div class="card">
+          <h3>🔊 Voice + 📱 APK</h3>
+          <p>Coach ki <b>🔊 Suno</b> button se guide bol ke sunayi deti hai (Hinglish). Phone pe chahiye?</p>
+          <div class="callout note" style="margin:10px 0 12px"><span class="ico">📱</span><div>Native Android APK GitHub release pe hai — <b>chess-sikho-apk</b> tag. Offline chalta hai, koi permission nahi maangta.</div></div>
+          <p style="font-size:.82rem;color:var(--muted);margin:0">Panel me ✅ se guide on/off, <b>−/+</b> se sochne ki depth (1 = fast, 4 = deep), <b>▶ Ye chaal chalo</b> se coach ki chaal khud chal jaati hai.</p>
+          <div style="margin-top:14px"><a class="btn small" href="https://github.com/amitvalmiki123/Erza-Scarlet-Music/releases/tag/chess-sikho-apk" target="_blank" rel="noopener">⬇ APK download</a></div>
+        </div>
+      </div>
+
+      <div class="section-title">
         <h2>Jaldi seekhne ka rasta</h2>
         <span>Isi order me chalo — bas.</span>
       </div>
@@ -579,6 +604,7 @@
     const ctx = {
       getGame: () => (play && !play.result ? play.game : null),
       getSans: () => (play ? play.moves.map((m) => m.san) : []),
+      getLastMove: () => (play ? play.lastMove : null),
       onArrow: (move, sticky) => {
         if (!play || !play.board) return;
         if (!move) { play.board.arrows = []; play.board.hintSquares = []; play.board.render(); return; }
@@ -794,8 +820,8 @@
   function applyMove(move) {
     const san = play.game.san(move);
     play.game.makeMove(move);
-    play.moves.push({ san, from: move.from, to: move.to });
-    play.lastMove = { from: move.from, to: move.to };
+    play.moves.push({ san, from: move.from, to: move.to, captured: move.captured || null });
+    play.lastMove = { from: move.from, to: move.to, captured: move.captured || null };
     const st = statusOf(play.game);
     if (['checkmate', 'stalemate', 'draw-fifty', 'draw-material', 'draw-repetition'].includes(st)) {
       play.result = st;

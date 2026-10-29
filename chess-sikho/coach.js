@@ -127,9 +127,18 @@
                   <span class="rr-pct">${pct(r.prob)}</span>
                 </div>
                 <div class="rr-note">${fmt(r.note)}</div>
-                ${r.answer ? `<div class="rr-answer">👉 Jawab: <b>${fmt(r.answer.san)}</b> — ${fmt(r.answer.note)}</div>` : ''}
+                ${r.answer ? `<div class="rr-answer">👉 Jawab: <b>${fmt(r.answer.san)}</b>${r.answer.why ? ` — ${fmt(r.answer.why)}` : ` — ${fmt(r.answer.note)}`}</div>` : ''}
               </div>`).join('')}
           </div>
+        </details>`);
+    }
+
+    // --- tumhare hanging pieces ---
+    if (a.hanging && a.hanging.length) {
+      parts.push(`
+        <details class="coach-sec warn" open>
+          <summary>🩹 Tumhare piece khatre me</summary>
+          <ul class="threat-list">${a.hanging.map((h) => `<li class="sev${h.kind === 'free' ? 3 : 2}">${fmt(h.text)}</li>`).join('')}</ul>
         </details>`);
     }
 
@@ -254,6 +263,8 @@
       try {
         data = Coach.analyze(g2, {
           sanHistory: sans,
+          lastMoveTo: ctx.getLastMove ? (ctx.getLastMove() || {}).to : null,
+          lastCaptured: ctx.getLastMove ? (ctx.getLastMove() || {}).captured : null,
           depth: settings.depth,
           maxNodes: settings.depth >= 4 ? 120000 : settings.depth === 3 ? 60000 : 24000,
         });

@@ -152,7 +152,7 @@
     return out;
   }
 
-  function describeFacts(game, move) {
+  function describeFacts(game, move, lastTo, lostPiece) {
     const us = game.turn;
     const them = other(us);
     const pc = game.board[move.from];
@@ -164,6 +164,10 @@
       from: move.from,
       to: move.to,
       isCapture: !!move.captured,
+      isRecapture: !!move.captured && lastTo != null && move.to === lastTo,
+      lostPiece: lostPiece ? String(lostPiece).toLowerCase() : null,
+      lostVal: lostPiece ? (VAL[String(lostPiece).toLowerCase()] || 0) : 0,
+      net: 0,
       capturedPiece: move.captured ? move.captured.toLowerCase() : null,
       capturedValue: move.captured ? VAL[move.captured.toLowerCase()] || 0 : 0,
       see: 0,
@@ -185,7 +189,12 @@
       kingPawnMove: false,
       attacksQueen: false,
     };
-    if (facts.isCapture) facts.see = seeCapture(game, move);
+    if (facts.isCapture) {
+      facts.see = seeCapture(game, move);
+      // Recapture me wo piece bhi gino jo opponent ne abhi kaata hai —
+      // warna "trade" ka hisaab adhoora reh jaata hai.
+      facts.net = facts.isRecapture ? facts.see - facts.lostVal : facts.see;
+    }
 
     const clone = new Kit.Chess(game.fen());
     const m2 = clone.findMove(move.from, move.to, move.promotion || 'q');
@@ -234,9 +243,18 @@
     }
     if (facts.isCapture) {
       const gain = Math.round(facts.see / 100 * 10) / 10;
-      if (facts.see > 50) add('💰', `**${facts.san}** — ${WORD[facts.capturedPiece]} capture kar ke material jeet rahe ho (approx +${gain}).`, 'best');
-      else if (facts.see >= -30) add('⚖️', `**${facts.san}** — barabar trade hai, isse structure aur behtar hota hai.`, 'good');
-      else add('⚠️', `**${facts.san}** se nuksan ho sakta hai (approx ${gain}) — recapture ke baad tum kamzor reh jaoge.`, 'bad');
+      if (facts.isRecapture) {
+        const net = Math.round(facts.net / 100 * 10) / 10;
+        if (facts.net > 50) add('💰', `**${facts.san}** — wapas kaat rahe ho, aur poore exchange me tum ~+${net} aage rahoge.`, 'best');
+        else if (facts.net >= -50) add('⚖️', `**${facts.san}** — recapture: jo ${WORD[facts.lostPiece] || 'piece'} tumne khoya tha, uske badle ${WORD[facts.capturedPiece]} mila. Trade barabar hai.`, 'good');
+        else add('⚠️', `**${facts.san}** — recapture ke baad bhi poore trade me tum ~${Math.abs(net)} peeche rahoge.`, 'bad');
+      } else if (facts.see > 50) {
+        add('💰', `**${facts.san}** — ${WORD[facts.capturedPiece]} free me mil raha hai (exchange ke baad ~+${gain}).`, 'best');
+      } else if (facts.see >= -30) {
+        add('⚖️', `**${facts.san}** — barabar trade: ${WORD[facts.capturedPiece]} ke badle tumhara ${WORD[facts.piece]}. Position khulti hai.`, 'good');
+      } else {
+        add('⚠️', `**${facts.san}** se nuksan hoga (~${gain}) — recapture ke baad tum kamzor reh jaoge.`, 'bad');
+      }
     }
     if (facts.mate) return out;
     if (facts.forkTargets.length >= 2) {
@@ -288,6 +306,58 @@
       tips.push('Rook ko apne pawn ke **peeche** rakho.');
     }
     return tips;
+  }
+
+  /**
+   * Tumhare kaun se pieces abhi "hanging" hain (attack ho rahe, defend nahi)
+   * ya saste piece se attack ho rahe (nuksaan ka trade).
+   */
+  function hangingPieces(game, color) {
+    const out = [];
+    const foe = other(color);
+    const foeMoves = game.legalMovesFor ? null : null;
+    // opponent ke legal moves se attacker ka pata lagao (value ke liye)
+    let attackerValues = null;
+    try {
+      const flipped = flipTurnGame(game);
+      attackerValues = {};
+      for (const m of flipped.legalMoves()) {
+        if (!m.captured) continue;
+        const fromPc = game.board[m.from];
+        const v = fromPc ? VAL[fromPc.toLowerCase()] || 0 : 0;
+        const key = m.to;
+        if (attackerValues[key] === undefined || v < attackerValues[key]) attackerValues[key] = v;
+      }
+    } catch (e) { attackerValues = null; }
+
+    for (let sq = 0; sq < 64; sq++) {
+      const pc = game.board[sq];
+      if (!pc) continue;
+      const isWhite = pc === pc.toUpperCase();
+      if ((color === 'w') !== isWhite) continue;
+      const t = pc.toLowerCase();
+      if (t === 'k') continue;
+      const val = VAL[t] || 0;
+      const attacked = game.isAttacked(sq, foe);
+      if (!attacked) continue;
+      const defended = game.isAttacked(sq, color);
+      const cheapest = attackerValues && attackerValues[sq] !== undefined ? attackerValues[sq] : null;
+      if (!defended) {
+        out.push({ sq, piece: t, value: val, kind: 'free', text: `${sqName(sq)} ka ${WORD[t]} bilkul free hai — koi defend nahi kar raha.` });
+      } else if (cheapest !== null && cheapest < val - 20) {
+        out.push({ sq, piece: t, value: val, kind: 'badtrade', text: `${sqName(sq)} ka ${WORD[t]} saste piece (${WORD_BY_VAL(cheapest)}) se attack ho raha hai — trade me nuksan.` });
+      }
+    }
+    out.sort((a, b) => b.value - a.value);
+    return out;
+  }
+
+  function WORD_BY_VAL(v) {
+    if (v >= 900) return 'queen';
+    if (v >= 500) return 'rook';
+    if (v >= 330) return 'bishop';
+    if (v >= 320) return 'knight';
+    return 'pawn';
   }
 
   // Agar hamari chaal na ho (pass), opponent kya karega?
@@ -410,11 +480,19 @@
       const best = AI.bestMove(clone, 2, { maxNodes: 18000 });
       if (best) {
         const replySan = clone.san(best.move);
+        let why = '';
+        try {
+          const f = describeFacts(clone, best.move, move.to, move.captured || null);
+          const bl = bulletsFor(clone, f, phaseOf(clone), null);
+          const good = bl.filter((b) => b.tone !== 'bad');
+          why = good.length ? stripMd(good[0].text) : '';
+        } catch (e) { why = ''; }
         answer = {
           san: replySan,
+          why,
           note: move.captured ? 'wapas kaat lo — material barabar karo.'
             : san.includes('+') ? 'check se bacho: king hatao, block karo ya attacker ko maaro.'
-              : 'iske saath apna plan continue karo.',
+              : why || 'iske saath apna plan continue karo.',
         };
       }
     } catch (e) { answer = null; }
@@ -519,8 +597,13 @@
     };
 
     // Pehli chaal ke liye alag guide (opening book me single-move lines nahi hain)
+    // Sirf tab jab sach me game ki pehli chaal ho (history empty), warna
+    // bina-history ke test/analysis positions pe galat guide lag jaata hai.
     const FMG = (typeof window !== 'undefined' ? window.FIRST_MOVE_GUIDE : global.FIRST_MOVE_GUIDE) || null;
-    if (FMG && (!sans || !sans.length)) {
+    const freshGame = (!sans || !sans.length)
+      && (!game.history || game.history.length === 0)
+      && game.fen().indexOf('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR') === 0;
+    if (FMG && freshGame) {
       const g = FMG[game.turn];
       if (g) result.firstMove = g;
     }
@@ -551,7 +634,7 @@
     }
 
     const top = ranked[0];
-    const facts = describeFacts(game, top.move);
+    const facts = describeFacts(game, top.move, opts.lastMoveTo != null ? opts.lastMoveTo : null, opts.lastCaptured || null);
     result.best = {
       san: top.san,
       score: top.score,
@@ -608,6 +691,11 @@
 
     result.threats = threatsAgainst(game);
     result.captures = captureAdvice(game);
+    try {
+      result.hanging = hangingPieces(game, game.turn).slice(0, 3);
+    } catch (e) {
+      result.hanging = [];
+    }
 
     // Voice script
     const b = result.best;
@@ -648,6 +736,7 @@
 
   return {
     analyze,
+    hangingPieces,
     applyTeaching,
     teachingBonus,
     winProb,
