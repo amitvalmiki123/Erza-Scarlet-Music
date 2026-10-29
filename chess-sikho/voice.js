@@ -17,7 +17,14 @@
 
   function save() { Store.setJSON('chessSikho.voice', PREFS); }
 
-  const synth = root.speechSynthesis || null;
+  // Kuch WebView/browsers me speechSynthesis hota hai par Utterance nahi —
+  // dono milenge tabhi Web Speech use karo, warna native bridge / chup.
+  let hasUtterance = false;
+  try {
+    hasUtterance = typeof root.SpeechSynthesisUtterance === 'function'
+      && !!new root.SpeechSynthesisUtterance('');
+  } catch (e) { hasUtterance = false; }
+  const synth = (root.speechSynthesis && hasUtterance) ? root.speechSynthesis : null;
   let voices = [];
   let chosen = null;
 
@@ -83,9 +90,9 @@
         return true;
       } catch (e) { speaking = false; /* fall through to web speech */ }
     }
-    if (!synth) return false;
+    if (!synth || typeof root.SpeechSynthesisUtterance !== 'function') return false;
     try {
-      const u = new SpeechSynthesisUtterance(t);
+      const u = new root.SpeechSynthesisUtterance(t);
       if (chosen) u.voice = chosen;
       u.lang = (chosen && chosen.lang) || PREFS.lang;
       u.rate = (opts && opts.rate) || PREFS.rate;
@@ -125,9 +132,10 @@
     }
     if (cur.trim()) chunks.push(cur.trim());
     let i = 0;
+    if (typeof root.SpeechSynthesisUtterance !== 'function') return false;
     const next = () => {
       if (i >= chunks.length || !speaking && i > 0) return;
-      const u = new SpeechSynthesisUtterance(chunks[i++]);
+      const u = new root.SpeechSynthesisUtterance(chunks[i++]);
       if (chosen) u.voice = chosen;
       u.lang = (chosen && chosen.lang) || PREFS.lang;
       u.rate = (opts && opts.rate) || PREFS.rate;

@@ -838,3 +838,36 @@ ul.why b { color: inherit; }
   .coach-body { max-height: none; }
   .cb-san { font-size: 1.45rem; }
 }
+
+/* ============ Mobile coach dock ============ */
+.coach-dock {
+  position: sticky; bottom: 0; z-index: 30; margin-top: 10px;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  padding: 9px 11px; border-radius: 14px;
+  background: rgba(21, 24, 35, 0.97); border: 1px solid rgba(71, 215, 160, 0.32);
+  box-shadow: 0 -8px 26px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+}
+.coach-dock.hidden { display: none; }
+.dock-main { display: flex; align-items: baseline; gap: 7px; min-width: 0; flex: 1; }
+.dock-san {
+  font-weight: 800; font-size: 1.05rem; color: var(--green);
+  font-family: var(--symbol), var(--font); flex: none;
+}
+.dock-prob {
+  flex: none; font-size: 0.7rem; font-weight: 700; color: var(--gold);
+  background: rgba(245, 196, 81, 0.14); border-radius: 99px; padding: 1px 7px;
+}
+.dock-why {
+  font-size: 0.74rem; color: var(--muted); line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+}
+.dock-btns { display: flex; gap: 6px; align-items: center; flex: none; }
+
+@media (min-width: 881px) {
+  .coach-dock { display: none; }
+}
+@media (max-width: 560px) {
+  .dock-why { display: none; }
+  .coach-dock { padding: 8px 10px; }
+}

@@ -631,9 +631,35 @@
         if (alt && alt.san) toast(`Option: ${alt.san} · ${Math.round(alt.winProb * 100)}% jeet`);
       },
       shouldSpeak: true,
+      onRender: renderDock,
     };
     play.coachCtx = ctx;
     play.coachApi = window.CoachUI.mount(panel, ctx);
+  }
+
+  // Mobile ke liye chhota dock: best move + 🔊 + details (bina scroll kiye).
+  function renderDock(data, ctx) {
+    const dock = $('#coach-dock', views.play);
+    if (!dock) return;
+    if (!data || !data.best || (play && play.result)) {
+      dock.classList.add('hidden');
+      dock.innerHTML = '';
+      return;
+    }
+    const b = data.best;
+    const why = b.why && b.why.length ? b.why[0].text.replace(/\*\*/g, '') : '';
+    dock.classList.remove('hidden');
+    dock.innerHTML = `
+      <div class="dock-main">
+        <span class="dock-san">${esc(b.san)}</span>
+        <span class="dock-prob">${Math.round(b.winProb * 100)}%</span>
+        <span class="dock-why">${esc(why.slice(0, 74))}${why.length > 74 ? '…' : ''}</span>
+      </div>
+      <div class="dock-btns">
+        <button class="ico-btn" data-dock="speak" title="Sunो">🔊</button>
+        <button class="btn tiny primary" data-dock="play">▶ Chalo</button>
+        <button class="btn tiny ghost" data-dock="details">⤢ Details</button>
+      </div>`;
   }
 
   function coachRefresh(force) {
@@ -653,6 +679,7 @@
           <div id="top-row"></div>
           <div class="board-shell"><div id="play-board"></div></div>
           <div id="bottom-row"></div>
+          <div class="coach-dock hidden" id="coach-dock"></div>
         </div>
         <aside>
           <div class="panel coach-panel" id="coach-panel" aria-live="polite"></div>
@@ -723,6 +750,21 @@
     $('#new-game', el).addEventListener('click', () => {
       newPlay(play.level, play.playerColor);
       renderPlay();
+    });
+    el.addEventListener('click', (e) => {
+      const d = e.target.closest('[data-dock]');
+      if (!d || !play || !play.coachCtx) return;
+      const data = play.coachCtx.data;
+      const act = d.dataset.dock;
+      if (act === 'speak') {
+        if (!data) return;
+        if (window.Voice) { window.Voice.speakLong(data.spoken); toast('🔊 Guide bol raha hoon…'); }
+      } else if (act === 'play') {
+        if (data && data.best) play.coachCtx.onPlayMove(data.best.move);
+      } else if (act === 'details') {
+        const panel = $('#coach-panel', el);
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     });
     $('#undo', el).addEventListener('click', undoMove);
     $('#hint', el).addEventListener('click', showHint);

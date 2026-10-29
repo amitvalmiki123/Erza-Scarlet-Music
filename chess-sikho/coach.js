@@ -210,18 +210,22 @@
 
     if (!settings.on) {
       body.innerHTML = `<div class="coach-empty">Guide band hai. ✅ dabao ya <button class="linkish" data-act="once">ek baar analyze karo</button>.</div>`;
+      if (ctx.onRender) { try { ctx.onRender(null, ctx); } catch (e) { /* ignore */ } }
       return;
     }
     if (ctx.busy) {
       body.innerHTML = `<div class="coach-busy"><span class="spinner"></span> Coach soch raha hai… <span class="dim">(depth ${settings.depth})</span></div>`;
+      if (ctx.onRender) { try { ctx.onRender(null, ctx); } catch (e) { /* ignore */ } }
       return;
     }
     if (!ctx.data) {
       body.innerHTML = `<div class="coach-empty">Analysis ready nahi. <button class="linkish" data-act="analyze">Abhi analyze karo</button></div>`;
+      if (ctx.onRender) { try { ctx.onRender(null, ctx); } catch (e) { /* ignore */ } }
       return;
     }
     if (ctx.stale) {
       body.innerHTML = `<div class="coach-empty">Position badal gayi — <button class="linkish" data-act="analyze">dobara analyze karo</button></div>`;
+      if (ctx.onRender) { try { ctx.onRender(null, ctx); } catch (e) { /* ignore */ } }
       return;
     }
     body.innerHTML = renderBody(ctx) + `
@@ -233,6 +237,7 @@
         <button class="btn tiny ghost" data-act="depth-up">+</button>
         <button class="btn tiny ghost" data-act="refresh">↻</button>
       </div>`;
+    if (ctx.onRender) { try { ctx.onRender(ctx.data, ctx); } catch (e) { /* ignore */ } }
   }
 
   // ---------- analysis ----------
